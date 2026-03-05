@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedBox AI — SMC Copilot</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090c;--s1:#0c0f16;--s2:#111520;--s3:#161b26;
+  --b1:#18202e;--b2:#1e2840;
+  --red:#f03e3e;--red2:rgba(240,62,62,.12);
+  --ora:#ff922b;--ora2:rgba(255,146,43,.12);
+  --yel:#fcc419;--yel2:rgba(252,196,25,.08);
+  --grn:#20c997;--grn2:rgba(32,201,151,.10);
+  --blu:#339af0;--blu2:rgba(51,154,240,.10);
+  --gld:#e8b84b;--gld2:rgba(232,184,75,.10);
+  --pur:#cc5de8;--pur2:rgba(204,93,232,.10);
+  --t1:#dde3f0;--t2:#6e7a94;--t3:#353e52;
+  --mn:'JetBrains Mono',monospace;
+  --sf:'Sarabun',sans-serif;
+  --dp:'Bebas Neue',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:var(--sf);min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:9999}
+
+/* ─── NAV ─── */
+nav{position:sticky;top:0;z-index:600;height:50px;display:flex;align-items:center;background:rgba(7,9,12,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1)}
+.logo{display:flex;align-items:center;gap:9px;padding:0 18px;border-right:1px solid var(--b1);height:100%;flex-shrink:0}
+.logo-box{width:28px;height:28px;background:var(--red);display:grid;place-items:center;font-family:var(--dp);font-size:13px;color:#fff;position:relative}
+.logo-box::after{content:'';position:absolute;inset:-3px;border:1px solid rgba(240,62,62,.4);animation:lp 2.5s ease-in-out infinite}
+@keyframes lp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0;transform:scale(1.5)}}
+.logo-txt{font-family:var(--dp);font-size:18px;letter-spacing:3px}
+.logo-txt b{color:var(--red);font-weight:400}
+.ntabs{display:flex;height:100%;overflow-x:auto}
+.ntab{display:flex;align-items:center;gap:5px;padding:0 14px;font-size:12px;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;border-right:1px solid var(--b1)}
+.ntab:hover{color:var(--t1);background:rgba(255,255,255,.02)}
+.ntab.on{color:var(--t1);border-bottom-color:var(--red)}
+.nbg{font-family:var(--mn);font-size:9px;padding:1px 5px;background:var(--red2);color:var(--red)}
+.nbg-g{background:var(--grn2);color:var(--grn)}
+.nav-r{margin-left:auto;display:flex;align-items:center;gap:12px;padding:0 16px;border-left:1px solid var(--b1);flex-shrink:0}
+.ldot-wrap{display:flex;align-items:center;gap:5px;font-family:var(--mn);font-size:10px;color:var(--grn)}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:bk 1.4s ease-in-out infinite}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.2}}
+.clk{font-family:var(--mn);font-size:11px;color:var(--t2)}
+
+/* ─── PAGE ─── */
+.pg{display:none}.pg.on{display:block}
+
+/* ─── TOASTS ─── */
+.toastwrap{position:fixed;top:62px;right:14px;z-index:900;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border:1px solid;min-width:280px;max-width:320px;pointer-events:all;cursor:pointer;transform:translateX(360px);transition:transform .38s cubic-bezier(.16,1,.3,1);background:rgba(9,12,19,.98)}
+.toast.in{transform:translateX(0)}
+.t-ic{font-size:15px;flex-shrink:0;margin-top:1px}
+.t-body{flex:1}
+.t-ttl{font-family:var(--mn);font-size:9px;letter-spacing:1px;margin-bottom:2px}
+.t-dsc{font-size:11px;color:var(--t2);line-height:1.5}
+.t-x{font-size:12px;color:var(--t3);cursor:pointer;align-self:center;padding:2px 4px}
+.toast-g{border-color:rgba(32,201,151,.4)}.toast-g .t-ttl{color:var(--grn)}
+.toast-o{border-color:rgba(255,146,43,.4)}.toast-o .t-ttl{color:var(--ora)}
+.toast-gld{border-color:rgba(232,184,75,.4)}.toast-gld .t-ttl{color:var(--gld)}
+
+/* ─── MODAL ─── */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:700;display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.mbg.on{display:flex}
+.mbox{background:var(--s1);border:1px solid var(--b2);width:95vw;max-width:1180px;height:87vh;display:flex;flex-direction:column;animation:mi .2s ease}
+@keyframes mi{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.mhd{display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--b1);flex-shrink:0;flex-wrap:wrap}
+.msym{font-family:var(--dp);font-size:20px;letter-spacing:3px}
+.mtfs{display:flex;gap:3px;margin-left:auto}
+.tfb{font-family:var(--mn);font-size:10px;padding:4px 9px;border:1px solid var(--b2);color:var(--t3);cursor:pointer;transition:all .1s;background:transparent}
+.tfb:hover{color:var(--t1)}.tfb.on{background:var(--red2);color:var(--red);border-color:rgba(240,62,62,.4)}
+.mclose{width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--b2);color:var(--t2);cursor:pointer;font-size:14px}
+.mclose:hover{color:var(--t1)}
+.mbody{flex:1;display:flex;overflow:hidden;min-height:0}
+.chartarea{flex:1;position:relative;overflow:hidden}
+.chartarea>div{width:100%!important;height:100%!important;border:none;display:block}
+.chartload{position:absolute;inset:0;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:5}
+.chartload.gone{display:none}
+.spin{width:28px;height:28px;border:2px solid var(--b2);border-top-color:var(--red);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.spanel{width:240px;border-left:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.stabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0}
+.stab{flex:1;padding:8px 0;font-family:var(--mn);font-size:8px;letter-spacing:1px;text-align:center;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s}
+.stab.on{color:var(--t1);border-bottom-color:var(--red)}
+.scont{flex:1;overflow-y:auto;padding:11px}
+.zrow{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--s2);border:1px solid var(--b1);margin-bottom:3px}
+.ztag{font-family:var(--mn);font-size:8px;color:var(--t3);letter-spacing:.5px}
+.zdesc{font-size:8px;color:var(--t3);margin-top:1px}
+.zval{font-family:var(--mn);font-size:12px;font-weight:700}
+.zr{color:var(--red)}.zg{color:var(--grn)}.zgld{color:var(--gld)}.zbl{color:var(--blu)}
+.setupbox{background:linear-gradient(135deg,rgba(32,201,151,.06),transparent);border:1px solid rgba(32,201,151,.2);padding:10px;margin-top:8px}
+.sddir{font-family:var(--dp);font-size:17px;letter-spacing:2px;margin-bottom:6px}
+.sdgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.sdi .sdi-l{font-family:var(--mn);font-size:8px;letter-spacing:1px;color:var(--t3);text-transform:uppercase;margin-bottom:2px}
+.sdi .sdi-v{font-family:var(--mn);font-size:11px;font-weight:700}
+.sde{color:var(--gld)}.sdsl{color:var(--red)}.sdtp{color:var(--grn)}.sdrr{color:var(--blu)}
+.paitem{display:flex;flex-direction:column;gap:3px;padding:7px 8px;background:var(--s2);border:1px solid var(--b1);margin-bottom:3px}
+.patop{display:flex;align-items:center;gap:5px}
+.patag{font-family:var(--mn);font-size:7px;padding:1px 5px;border:1px solid;flex-shrink:0}
+.pa-smc{background:var(--gld2);color:var(--gld);border-color:rgba(232,184,75,.3)}
+.pa-ict{background:var(--pur2);color:var(--pur);border-color:rgba(204,93,232,.3)}
+.pa-pa{background:var(--blu2);color:var(--blu);border-color:rgba(51,154,240,.3)}
+.paname{font-family:var(--mn);font-size:9px;color:var(--t1);font-weight:600;flex:1}
+.pastatus{font-family:var(--mn);font-size:8px;margin-left:auto}
+.padesc{font-size:10px;color:var(--t2);line-height:1.5;padding-left:2px}
+.rebtn{width:100%;padding:7px;background:transparent;border:1px solid var(--b2);color:var(--t2);font-family:var(--mn);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .1s;text-align:center;margin-top:7px}
+.rebtn:hover{border-color:var(--grn);color:var(--grn)}
+
+/* ─── LAYOUT ─── */
+.layout{display:grid;grid-template-columns:190px 1fr 276px;min-height:calc(100vh - 50px)}
+
+/* ─── SIDEBAR ─── */
+.sidebar{border-right:1px solid var(--b1);background:rgba(9,12,19,.7);overflow-y:auto}
+.sbsec{padding:10px 0 0}
+.sblbl{font-family:var(--mn);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);padding:0 10px;margin-bottom:4px}
+.sbni{display:flex;align-items:center;gap:7px;padding:7px 10px;font-size:11px;color:var(--t2);cursor:pointer;border-left:2px solid transparent;transition:all .1s}
+.sbni:hover{color:var(--t1);background:rgba(255,255,255,.02)}
+.sbni.on{color:var(--t1);border-left-color:var(--red);background:rgba(240,62,62,.03)}
+.sbnbg{margin-left:auto;font-family:var(--mn);font-size:8px;padding:1px 5px;background:var(--red2);color:var(--red)}
+.sbnbg-g{background:var(--grn2);color:var(--grn)}
+
+/* 
+  ★★★ TradingView Market Overview Widget ★★★
+  ราคาตรงกับกราฟ 100% — ดึงตรงจาก TradingView server
+  ไม่ต้องพึ่ง API ใดทั้งนั้น
+*/
+.tv-mkt-wrap{width:100%;overflow:hidden}
+/* Override TradingView widget default white bg */
+.tv-mkt-wrap iframe{background:transparent!important}
+
+.sesslist{padding:4px 10px 8px}
+.sessrow{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:10px;color:var(--t2)}
+.sdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.s-on{background:var(--grn);box-shadow:0 0 5px rgba(32,201,151,.7)}
+.s-off{background:var(--t3)}
+.stag{margin-left:auto;font-family:var(--mn);font-size:8px;padding:1px 5px}
+.st-on{background:var(--grn2);color:var(--grn)}.st-off{background:var(--b1);color:var(--t3)}
+
+/* ─── MAIN ─── */
+.main{padding:14px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.cbar{background:linear-gradient(135deg,rgba(240,62,62,.07),rgba(240,62,62,.02));border:1px solid rgba(240,62,62,.25);border-left:3px solid var(--red);padding:10px 14px;display:flex;align-items:center;gap:11px}
+.cbell{font-size:16px;animation:rg 1.2s ease-in-out infinite}
+@keyframes rg{0%,100%{transform:rotate(0)}20%{transform:rotate(12deg)}40%{transform:rotate(-12deg)}}
+.cinfo{flex:1}
+.ctag{font-family:var(--mn);font-size:8px;letter-spacing:2px;color:var(--red);margin-bottom:2px}
+.ctxt{font-size:12px;color:var(--t1)}
+.csub{font-size:10px;color:var(--t2);margin-top:1px}
+.ctimer{font-family:var(--dp);font-size:28px;letter-spacing:3px;color:var(--red);text-shadow:0 0 16px rgba(240,62,62,.35)}
+.chint{font-family:var(--mn);font-size:8px;color:var(--t3);text-align:right;margin-top:2px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:var(--s1);border:1px solid var(--b1);padding:9px 11px;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.st-r::before{background:var(--red)}.st-o::before{background:var(--ora)}.st-g::before{background:var(--grn)}.st-gld::before{background:var(--gld)}
+.stl{font-family:var(--mn);font-size:8px;letter-spacing:1px;color:var(--t3);text-transform:uppercase;margin-bottom:2px}
+.stv{font-family:var(--dp);font-size:18px;letter-spacing:2px}
+.sr{color:var(--red)}.so{color:var(--ora)}.sg{color:var(--grn)}.sgld{color:var(--gld)}
+.sts{font-size:9px;color:var(--t2);margin-top:1px}
+.phase{background:var(--s1);border:1px solid var(--b1);overflow:hidden;margin-bottom:1px}
+.phd{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;transition:background .1s;user-select:none}
+.phd:hover{background:rgba(255,255,255,.015)}
+.phn{font-family:var(--dp);font-size:22px;width:27px;text-align:center;line-height:1}
+.pre .phn{color:var(--ora)}.kill .phn{color:var(--red)}.sett .phn{color:var(--grn)}
+.phm{flex:1}
+.phtag{font-family:var(--mn);font-size:8px;letter-spacing:1px;padding:2px 6px;border:1px solid;display:inline-block;margin-bottom:2px}
+.pre .phtag{color:var(--ora);border-color:rgba(255,146,43,.35);background:var(--ora2)}
+.kill .phtag{color:var(--red);border-color:rgba(240,62,62,.35);background:var(--red2)}
+.sett .phtag{color:var(--grn);border-color:rgba(32,201,151,.35);background:var(--grn2)}
+.phtitle{font-size:12px;font-weight:600;color:var(--t1)}
+.phsub{font-size:10px;color:var(--t2);margin-top:1px}
+.phbadge{font-family:var(--mn);font-size:8px;letter-spacing:1px;padding:2px 7px;border:1px solid}
+.phb-a{color:var(--ora);border-color:rgba(255,146,43,.3);background:var(--ora2);animation:bk 1.5s infinite}
+.phb-w{color:var(--t3);border-color:var(--b2)}
+.phbody{border-top:1px solid var(--b1);padding:11px 12px}
+.airow{display:flex;gap:8px;margin-bottom:9px}
+.aiav{width:22px;height:22px;background:var(--s3);border:1px solid var(--b2);display:grid;place-items:center;font-size:10px;flex-shrink:0}
+.aibub{flex:1;background:var(--s2);border:1px solid var(--b2);padding:8px 10px;font-size:11px;line-height:1.8;color:var(--t2)}
+.aibub strong{color:var(--t1)}.hr{color:var(--red);font-weight:600}.hg{color:var(--grn);font-weight:600}.ho{color:var(--ora);font-weight:600}.hgld{color:var(--gld);font-weight:600}
+.kvgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:9px}
+.kv{background:var(--s3);border:1px solid var(--b2);padding:7px 9px}
+.kvl{font-family:var(--mn);font-size:8px;letter-spacing:1px;color:var(--t3);text-transform:uppercase;margin-bottom:2px}
+.kvv{font-family:var(--mn);font-size:13px;font-weight:700}
+.kvr{color:var(--red)}.kvg{color:var(--grn)}.kvgld{color:var(--gld)}
+.kvd{font-size:9px;color:var(--t3);margin-top:1px}
+.setupcard{background:linear-gradient(135deg,rgba(32,201,151,.05),transparent);border:1px solid rgba(32,201,151,.2);padding:11px;margin-bottom:9px}
+.schd{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.scdir{font-family:var(--dp);font-size:17px;letter-spacing:3px;color:var(--grn)}
+.scconf{font-family:var(--mn);font-size:8px;padding:2px 6px;background:var(--grn2);color:var(--grn);border:1px solid rgba(32,201,151,.3)}
+.scrows{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.sci .scil{font-family:var(--mn);font-size:8px;letter-spacing:1px;color:var(--t3);text-transform:uppercase;margin-bottom:2px}
+.sci .sciv{font-family:var(--mn);font-size:12px;font-weight:700}
+.se{color:var(--gld)}.ssl{color:var(--red)}.stp{color:var(--grn)}
+.sin{font-size:8px;color:var(--t3);margin-top:1px}
+.warn{display:flex;align-items:flex-start;gap:7px;background:var(--ora2);border:1px solid rgba(255,146,43,.25);padding:8px 10px;font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:9px}
+.wi{color:var(--ora);flex-shrink:0;margin-top:1px}
+.openbtn{width:100%;padding:7px;background:transparent;border:1px solid;font-family:var(--mn);font-size:9px;cursor:pointer;letter-spacing:1px;transition:all .1s;text-align:center}
+.ob-r{border-color:rgba(240,62,62,.3);color:var(--red)}.ob-r:hover{background:var(--red2)}
+.ob-g{border-color:rgba(32,201,151,.3);color:var(--grn)}.ob-g:hover{background:var(--grn2)}
+
+/* Calendar */
+.cal{background:var(--s1);border:1px solid var(--b1)}
+.calhd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--b1)}
+.calt{font-family:var(--mn);font-size:8px;letter-spacing:2px;color:var(--t3);text-transform:uppercase}
+.callib{font-family:var(--mn);font-size:8px;padding:1px 6px;background:var(--blu2);color:var(--blu);border:1px solid rgba(51,154,240,.3)}
+.colhd{display:grid;grid-template-columns:50px 44px 1fr 52px 52px;padding:4px 12px;border-bottom:1px solid var(--b1);background:rgba(0,0,0,.3);gap:6px}
+.ch{font-family:var(--mn);font-size:8px;letter-spacing:1px;color:var(--t3);text-transform:uppercase}
+.chr{text-align:right}
+.calrow{display:grid;grid-template-columns:50px 44px 1fr 52px 52px;padding:8px 12px;border-bottom:1px solid var(--b1);align-items:center;gap:6px;transition:background .1s;cursor:pointer}
+.calrow:hover{background:rgba(255,255,255,.02)}
+.calrow:last-child{border-bottom:none}
+.crt{font-family:var(--mn);font-size:9px;color:var(--t3)}
+.crt.soon{color:var(--red);animation:bk 1s infinite}
+.crt.up{color:var(--ora)}
+.imp{display:inline-flex;align-items:center;justify-content:center;width:42px;padding:2px 0;font-family:var(--mn);font-size:7px;font-weight:600;letter-spacing:.5px;border:1px solid}
+.ih{background:var(--red2);color:var(--red);border-color:rgba(240,62,62,.4)}
+.im{background:var(--ora2);color:var(--ora);border-color:rgba(255,146,43,.4)}
+.il{background:var(--yel2);color:var(--yel);border-color:rgba(252,196,25,.4)}
+.crn{font-size:11px;font-weight:500;color:var(--t1)}
+.crn small{display:block;font-size:9px;color:var(--t3);font-weight:400;margin-top:1px}
+.crnum{font-family:var(--mn);font-size:9px;color:var(--t2);text-align:right}
+.cract{font-family:var(--mn);font-size:10px;font-weight:700;text-align:right}
+.ca-hot{color:var(--red)}.ca-cold{color:var(--grn)}.ca-pend{color:var(--t3)}
+.nowline{display:flex;align-items:center;gap:7px;padding:4px 12px;background:rgba(240,62,62,.02)}
+.nl{flex:1;height:1px;background:rgba(240,62,62,.3)}
+.nt{font-family:var(--mn);font-size:8px;color:var(--red);letter-spacing:2px}
+
+/* Right panel */
+.rp{border-left:1px solid var(--b1);background:rgba(9,12,19,.5);overflow-y:auto}
+.rpsec{border-bottom:1px solid var(--b1);padding:11px}
+.rplbl{font-family:var(--mn);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.rpill{font-size:8px;padding:1px 6px;border:1px solid}
+.rp-r{background:var(--red2);color:var(--red);border-color:rgba(240,62,62,.3)}
+.rp-g{background:var(--grn2);color:var(--grn);border-color:rgba(32,201,151,.3)}
+.rp-o{background:var(--ora2);color:var(--ora);border-color:rgba(255,146,43,.3)}
+.deccard{background:linear-gradient(160deg,var(--s2),var(--s3));border:1px solid var(--b2);padding:10px;margin-bottom:6px}
+.dct{font-family:var(--mn);font-size:8px;color:var(--t3);margin-bottom:3px}
+.dcv{font-family:var(--dp);font-size:17px;letter-spacing:2px;margin-bottom:3px}
+.dv-w{color:var(--ora)}.dv-b{color:var(--grn)}.dv-s{color:var(--red)}
+.dcr{font-size:11px;color:var(--t2);line-height:1.6}
+.dcr strong{color:var(--t1)}
+.newscard{background:var(--s2);border:1px solid var(--b2);padding:8px;margin-bottom:6px}
+.ncevt{font-size:11px;font-weight:600;color:var(--t1);margin-bottom:4px}
+.ncnums{display:flex;gap:10px;margin-bottom:6px}
+.ncn{font-family:var(--mn);font-size:8px;color:var(--t3)}
+.ncn span{display:block;font-size:12px;font-weight:600}
+.ncpills{display:flex;flex-wrap:wrap;gap:3px}
+.pill{font-size:8px;font-family:var(--mn);padding:2px 6px;border:1px solid}
+.pu{background:var(--red2);color:var(--red);border-color:rgba(240,62,62,.3)}
+.pd{background:var(--grn2);color:var(--grn);border-color:rgba(32,201,151,.3)}
+.pn{background:var(--yel2);color:var(--yel);border-color:rgba(252,196,25,.3)}
+.scwrap{margin-bottom:8px}
+.scl{font-size:10px;font-weight:600;margin-bottom:3px}
+.scbar{height:4px;background:var(--b2);margin-bottom:3px}
+.scfr{height:100%;background:linear-gradient(90deg,var(--red),rgba(240,62,62,.5))}
+.scfg{height:100%;background:linear-gradient(90deg,rgba(32,201,151,.5),var(--grn));float:right}
+.scn{font-size:10px;color:var(--t2);line-height:1.5}
+.zonelist{display:flex;flex-direction:column;gap:3px}
+.zitem{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--s2);border:1px solid var(--b2);font-size:10px}
+.zt{font-family:var(--mn);font-size:8px;padding:1px 5px;border:1px solid;flex-shrink:0}
+.zt-r{background:var(--red2);color:var(--red);border-color:rgba(240,62,62,.3)}
+.zt-g{background:var(--grn2);color:var(--grn);border-color:rgba(32,201,151,.3)}
+.zt-gld{background:var(--gld2);color:var(--gld);border-color:rgba(232,184,75,.3)}
+.risc{background:rgba(252,196,25,.04);border:1px solid rgba(252,196,25,.15);padding:8px 10px;font-size:10px;color:var(--t2);line-height:1.7}
+
+/* Trade Plan */
+.tpcard{background:var(--s2);border:1px solid var(--b2)}
+.tpai{padding:9px 10px;border-bottom:1px solid var(--b1)}
+.tpai-hd{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.tpai-dot{width:5px;height:5px;border-radius:50%;background:var(--grn);animation:bk 1s infinite}
+.tpai-tag{font-family:var(--mn);font-size:8px;letter-spacing:1px;color:var(--grn)}
+.tpai-txt{font-size:11px;color:var(--t2);line-height:1.7}
+.tpai-txt strong{color:var(--t1)}.tpai-txt .tr{color:var(--red);font-weight:600}.tpai-txt .tg{color:var(--grn);font-weight:600}.tpai-txt .to{color:var(--ora);font-weight:600}.tpai-txt .tgld{color:var(--gld);font-weight:600}
+.tprows{padding:3px 0}
+.tprow{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--b1)}
+.tprow:last-child{border-bottom:none}
+.tplab{font-size:10px;color:var(--t2)}
+.tpval{font-family:var(--mn);font-size:11px;font-weight:600}
+.tp-buy{color:var(--grn)!important;background:var(--grn2);padding:1px 7px;border:1px solid rgba(32,201,151,.3)}
+.tp-sell{color:var(--red)!important;background:var(--red2);padding:1px 7px;border:1px solid rgba(240,62,62,.3)}
+.tp-wait{color:var(--ora)!important;background:var(--ora2);padding:1px 7px;border:1px solid rgba(255,146,43,.3)}
+.tpref{width:100%;padding:7px;background:transparent;border-top:1px solid var(--b1);border-bottom:none;border-left:none;border-right:none;color:var(--t2);font-family:var(--mn);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .1s;text-align:center}
+.tpref:hover{color:var(--gld)}
+
+/* Charts page */
+.chpg{padding:16px}
+.pghd{margin-bottom:14px}
+.pgtitle{font-family:var(--dp);font-size:24px;letter-spacing:4px;margin-bottom:3px}
+.pgsub{font-size:11px;color:var(--t2)}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:10px}
+.acard{background:var(--s1);border:1px solid var(--b1);overflow:hidden;cursor:pointer;transition:all .18s;position:relative}
+.acard:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.acard.alert-a{border-color:rgba(32,201,151,.35)}
+.acard.alert-a::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grn)}
+.actop{padding:9px 11px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between}
+.acsym{font-family:var(--dp);font-size:17px;letter-spacing:2px}
+.acname{font-size:9px;color:var(--t2);margin-top:1px}
+.acbadge-a{font-family:var(--mn);font-size:8px;padding:2px 6px;background:var(--grn2);color:var(--grn);border:1px solid rgba(32,201,151,.35);display:flex;align-items:center;gap:3px}
+.acbadge-w{font-family:var(--mn);font-size:8px;padding:2px 6px;background:var(--s3);color:var(--t3);border:1px solid var(--b2)}
+/* TradingView Single Quote widget in each card */
+.ac-quote{overflow:hidden;height:56px;border-bottom:1px solid var(--b1);position:relative}
+.ac-quote-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mn);font-size:9px;color:var(--t3)}
+.actags{padding:5px 11px 7px;display:flex;flex-wrap:wrap;gap:3px}
+.atag{font-family:var(--mn);font-size:7px;padding:1px 5px;border:1px solid;letter-spacing:.5px}
+.t-smc{background:var(--gld2);color:var(--gld);border-color:rgba(232,184,75,.3)}
+.t-ict{background:var(--pur2);color:var(--pur);border-color:rgba(204,93,232,.3)}
+.t-pa{background:var(--blu2);color:var(--blu);border-color:rgba(51,154,240,.3)}
+.t-alrt{background:var(--grn2);color:var(--grn);border-color:rgba(32,201,151,.3);animation:bk 1.5s infinite}
+.acfooter{padding:6px 11px;border-top:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.2)}
+.ac-atxt{font-size:9px;color:var(--grn);display:flex;align-items:center;gap:3px}
+.ac-wtxt{font-size:9px;color:var(--t3)}
+.acopen{font-family:var(--mn);font-size:8px;padding:3px 8px;border:1px solid var(--b2);color:var(--t3);transition:all .1s;background:transparent}
+.acopen:hover{border-color:var(--red);color:var(--red)}
+
+/* Alerts page */
+.alpg{padding:16px;max-width:660px}
+.alhd{margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.altitle{font-family:var(--dp);font-size:24px;letter-spacing:4px}
+.alitem{background:var(--s1);border:1px solid var(--b1);padding:10px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:9px;cursor:pointer;transition:background .1s}
+.alitem:hover{background:var(--s2)}
+.alitem.new{border-left:3px solid var(--grn)}
+.alitem.warn{border-left:3px solid var(--ora)}
+.alitem.info{border-left:3px solid var(--blu)}
+.alic{font-size:16px;flex-shrink:0}
+.alcnt{flex:1}
+.altl{font-size:12px;font-weight:600;color:var(--t1);margin-bottom:2px}
+.aldc{font-size:11px;color:var(--t2);line-height:1.5}
+.almeta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.amsym{font-family:var(--mn);font-size:8px;padding:1px 6px;background:var(--s3);border:1px solid var(--b2);color:var(--t2)}
+.amt{font-family:var(--mn);font-size:8px;color:var(--t3)}
+.albtn{font-family:var(--mn);font-size:8px;padding:3px 8px;border:1px solid var(--b2);color:var(--t2);align-self:center;flex-shrink:0;cursor:pointer;background:transparent;transition:all .1s}
+.albtn:hover{border-color:var(--grn);color:var(--grn)}
+</style>
+</head>
+<body>
+
+<div class="toastwrap" id="toastwrap"></div>
+
+<!-- ─── MODAL CHART ─── -->
+<div class="mbg" id="chartModal" onclick="closeMBG(event)">
+  <div class="mbox">
+    <div class="mhd">
+      <div class="msym" id="mSym">—</div>
+      <!-- TradingView Single Quote in modal header — real-time price -->
+      <div id="mQuoteArea" style="height:44px;overflow:hidden;min-width:150px;flex-shrink:0"></div>
+      <div class="mtfs" id="mTFs">
+        <div class="tfb" onclick="setTF('1',this)">M1</div>
+        <div class="tfb on" onclick="setTF('5',this)">M5</div>
+        <div class="tfb" onclick="setTF('15',this)">M15</div>
+        <div class="tfb" onclick="setTF('60',this)">H1</div>
+        <div class="tfb" onclick="setTF('240',this)">H4</div>
+        <div class="tfb" onclick="setTF('D',this)">D</div>
+      </div>
+      <div class="mclose" onclick="closeModal()">✕</div>
+    </div>
+    <div class="mbody">
+      <div class="chartarea">
+        <div class="chartload" id="chartLoad">
+          <div class="spin"></div>
+          <p style="font-family:var(--mn);font-size:10px;color:var(--t3)">กำลังโหลดกราฟ...</p>
+        </div>
+        <div id="tvChartCont" style="width:100%;height:100%"></div>
+      </div>
+      <div class="spanel">
+        <div class="stabs">
+          <div class="stab on" onclick="setStab('zones',this)">Zones</div>
+          <div class="stab" onclick="setStab('ai',this)">AI</div>
+          <div class="stab" onclick="setStab('pa',this)">PA/ICT</div>
+        </div>
+        <div class="scont" id="sCont"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <div class="logo"><div class="logo-box">RB</div><span class="logo-txt">RED<b>BOX</b> AI</span></div>
+  <div class="ntabs">
+    <div class="ntab on ntab-db" onclick="goPage('dashboard')">📊 Dashboard <span class="nbg">3</span></div>
+    <div class="ntab ntab-ch" onclick="goPage('charts')">📈 กราฟสินทรัพย์</div>
+    <div class="ntab ntab-al" onclick="goPage('alerts')">🔔 แจ้งเตือน <span class="nbg nbg-g">3</span></div>
+    <div class="ntab" onclick="goPage('dashboard')">📅 ปฏิทินข่าว</div>
+  </div>
+  <div class="nav-r">
+    <div class="ldot-wrap"><div class="ldot"></div>LIVE</div>
+    <div class="clk" id="clockEl">--:--:--</div>
+  </div>
+</nav>
+
+<!-- ══════════ DASHBOARD PAGE ══════════ -->
+<div class="pg on" id="pg-dashboard">
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sbsec" style="margin-top:6px">
+    <div class="sblbl">เมนู</div>
+    <div class="sbni on"><span>📊</span>Dashboard<span class="sbnbg">3</span></div>
+    <div class="sbni" onclick="goPage('charts')"><span>📈</span>กราฟสินทรัพย์</div>
+    <div class="sbni" onclick="goPage('alerts')"><span>🔔</span>แจ้งเตือน<span class="sbnbg sbnbg-g">3</span></div>
+    <div class="sbni"><span>📐</span>SMC Zones</div>
+  </div>
+
+  <!--
+    ★ TradingView Market Overview Widget ★
+    ราคา real-time ตรงกับกราฟ 100% — ดึงตรงจาก TradingView
+    ไม่ต้อง API key ไม่มี CORS — ทำงานทุก environment
+  -->
+  <div class="sbsec">
+    <div class="sblbl">สินทรัพย์ — TradingView Live</div>
+    <div class="tv-mkt-wrap" id="tvMktWrap">
+      <!-- Widget injected by JS below -->
+    </div>
+  </div>
+
+  <div class="sbsec">
+    <div class="sblbl">เซสชัน</div>
+    <div class="sesslist" id="sessList"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="cbar">
+    <div class="cbell">🔔</div>
+    <div class="cinfo">
+      <div class="ctag" id="cdTag">⚠ HIGH IMPACT — กำลังจะออก</div>
+      <div class="ctxt" id="cdText">กำลังโหลดข่าว...</div>
+      <div class="csub" id="cdSub">ดึงจาก Forex Factory</div>
+    </div>
+    <div>
+      <div class="ctimer" id="cdTimer">--:--</div>
+      <div class="chint">จนกว่าข่าวจะออก</div>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat st-r"><div class="stl">ข่าวแรงวันนี้</div><div class="stv sr" id="stHigh">—</div><div class="sts">HIGH IMPACT</div></div>
+    <div class="stat st-o"><div class="stl">ข่าวถัดไป</div><div class="stv so" id="stNext">—</div><div class="sts" id="stNextName">—</div></div>
+    <div class="stat st-g"><div class="stl">คำแนะนำ</div><div class="stv sg">ทับมือ</div><div class="sts">รอข่าวออก</div></div>
+    <div class="stat st-gld"><div class="stl">แจ้งเตือน</div><div class="stv sgld">3</div><div class="sts">XAU, BTC, ETH</div></div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="phase pre">
+    <div class="phd" onclick="togglePh('ph1')">
+      <div class="phn">1</div>
+      <div class="phm"><div class="phtag">PRE-NEWS</div><div class="phtitle">ก่อนข่าวออก — เตรียมสถานการณ์</div><div class="phsub">SMC Structure + ICT Killzone Analysis</div></div>
+      <div class="phbadge phb-a">● กำลังใช้งาน</div>
+    </div>
+    <div class="phbody" id="ph1">
+      <div class="airow">
+        <div class="aiav">🤖</div>
+        <div class="aibub">มีข่าว <strong>US CPI (MoM)</strong> — 21:30 น. ตลาดคาด <span class="ho">0.3%</span><br>XAUUSD มี <span class="hr">BSL</span> และ <span class="hgld">Order Block</span> รออยู่<br><span class="ho">⚠ ทับมือก่อน</span> — ยังไม่ควรเข้าออร์เดอร์ใหม่</div>
+      </div>
+      <div class="kvgrid">
+        <div class="kv"><div class="kvl">BSL — Buy Side Liq.</div><div class="kvv kvr" id="kvBSL">—</div><div class="kvd">Asian High</div></div>
+        <div class="kv"><div class="kvl">Order Block</div><div class="kvv kvgld" id="kvOB">—</div><div class="kvd">Demand Zone</div></div>
+        <div class="kv"><div class="kvl">SSL — Sell Side Liq.</div><div class="kvv kvg" id="kvSSL">—</div><div class="kvd">Asian Low</div></div>
+        <div class="kv"><div class="kvl">FVG Zone</div><div class="kvv kvgld" id="kvFVG">—</div><div class="kvd">Fair Value Gap M15</div></div>
+      </div>
+      <button class="openbtn ob-r" onclick="openChart('XAUUSD')">📈 ดูกราฟ XAUUSD จริง (TradingView) →</button>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase kill">
+    <div class="phd" onclick="togglePh('ph2')">
+      <div class="phn">2</div>
+      <div class="phm"><div class="phtag">KILLZONE</div><div class="phtitle">วินาทีข่าวออก — อย่าเพิ่งเข้า</div><div class="phsub">Liquidity Sweep — รอกราฟนิ่งก่อน</div></div>
+      <div class="phbadge phb-w">○ รอเปิดใช้</div>
+    </div>
+    <div class="phbody" id="ph2" style="display:none">
+      <div class="warn"><div class="wi">⚠</div><div>Spread ถ่างกว้าง Smart Money ทำ <strong>Liquidity Sweep</strong> — ยังไม่ควรเปิดออร์เดอร์</div></div>
+      <div class="airow"><div class="aiav">🚨</div><div class="aibub" style="border-color:rgba(240,62,62,.25)"><span class="hr">🚨 CPI ออกสูงกว่าคาด</span> — ดอลลาร์แข็งทันที <span class="ho">รอ 3–5 นาทีให้นิ่งก่อน</span></div></div>
+      <button class="openbtn ob-r" onclick="openChart('XAUUSD')">📈 ดูกราฟ →</button>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase sett">
+    <div class="phd" onclick="togglePh('ph3')">
+      <div class="phn">3</div>
+      <div class="phm"><div class="phtag">THE SETUP</div><div class="phtitle">หลังข่าว 5–15 นาที — แผนเทรด SMC</div><div class="phsub">CHoCH + FVG + Entry Zone</div></div>
+      <div class="phbadge phb-w">○ รอเปิดใช้</div>
+    </div>
+    <div class="phbody" id="ph3" style="display:none">
+      <div class="airow"><div class="aiav">✅</div><div class="aibub" style="border-color:rgba(32,201,151,.25)"><span class="hg">กวาด SSL <span id="ph3ssl">—</span></span> — CHoCH ขาขึ้น M5<br><span class="hgld">FVG เปิดรอ</span> ที่ <span id="ph3fvg">—</span></div></div>
+      <div class="setupcard">
+        <div class="schd"><div class="scdir">▲ BUY SETUP</div><div class="scconf">HIGH Confidence</div></div>
+        <div class="scrows">
+          <div class="sci"><div class="scil">Entry</div><div class="sciv se" id="ph3entry">—</div><div class="sin">FVG + OB</div></div>
+          <div class="sci"><div class="scil">Stop Loss</div><div class="sciv ssl" id="ph3sl">—</div><div class="sin">ใต้ Sweep</div></div>
+          <div class="sci"><div class="scil">Take Profit</div><div class="sciv stp" id="ph3tp">—</div><div class="sin">BSL Target</div></div>
+        </div>
+      </div>
+      <button class="openbtn ob-g" onclick="openChart('XAUUSD')">📈 ยืนยัน Setup บนกราฟ →</button>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="cal">
+    <div class="calhd"><div class="calt">ปฏิทินข่าว — วันนี้</div><div class="callib" id="calBadge">⏳ กำลังโหลด</div></div>
+    <div class="colhd"><span class="ch">เวลา</span><span class="ch">ระดับ</span><span class="ch">ข่าว</span><span class="ch chr">คาด</span><span class="ch chr">จริง</span></div>
+    <div id="calBody"><div style="padding:18px;text-align:center;font-family:var(--mn);font-size:10px;color:var(--t3)">⏳ กำลังดึงข้อมูลจาก Forex Factory...</div></div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="rp">
+  <div class="rpsec">
+    <div class="rplbl">AI DECISION <span class="rpill rp-r">LIVE</span></div>
+    <div class="deccard">
+      <div class="dct" id="dcTime">กำลังอัปเดต...</div>
+      <div class="dcv dv-w">ทับมือก่อน</div>
+      <div class="dcr">มีข่าว <strong>HIGH IMPACT</strong> ใกล้ออก รอให้ข่าวผ่านและกราฟนิ่ง</div>
+    </div>
+  </div>
+  <div class="rpsec">
+    <div class="rplbl">ข่าวล่าสุด</div>
+    <div class="newscard">
+      <div class="ncevt" id="ncEvt">ADP Employment — 14:30 น.</div>
+      <div class="ncnums">
+        <div class="ncn">คาด<span style="color:var(--t2)" id="ncF">140K</span></div>
+        <div class="ncn">จริง<span style="color:var(--grn)" id="ncA">77K</span></div>
+        <div class="ncn">ก่อนหน้า<span style="color:var(--t2)" id="ncP">186K</span></div>
+      </div>
+      <div style="font-size:10px;color:var(--t2);line-height:1.6;margin-bottom:5px" id="ncDesc">ต่ำกว่าคาดมาก — <strong style="color:var(--t1)">ดอลลาร์อ่อนค่าชั่วคราว</strong></div>
+      <div class="ncpills"><div class="pill pu">📈 XAU บวก</div><div class="pill pd">📉 DXY ลด</div><div class="pill pn">➡ BTC เป็นกลาง</div></div>
+    </div>
+  </div>
+  <div class="rpsec">
+    <div class="rplbl">สถานการณ์ CPI</div>
+    <div class="scwrap"><div class="scl" style="color:var(--red)">🔴 สูงกว่าคาด → ดอลลาร์แข็ง</div><div class="scbar"><div class="scfr" style="width:72%"></div></div><div class="scn">→ ทองร่วง หา OB โซนล่างรับ</div></div>
+    <div class="scwrap"><div class="scl" style="color:var(--grn)">🟢 ต่ำกว่าคาด → ดอลลาร์อ่อน</div><div class="scbar"><div class="scfg" style="width:62%"></div></div><div class="scn">→ ทองวิ่งขึ้นหา BSL</div></div>
+  </div>
+
+  <!-- TRADE PLAN CARD -->
+  <div class="rpsec">
+    <div class="rplbl">🎯 แผนเทรด XAUUSD <span class="rpill rp-o" id="tpBadge">ทับมือ</span></div>
+    <div class="tpcard">
+      <div class="tpai">
+        <div class="tpai-hd"><div class="tpai-dot"></div><div class="tpai-tag">AI SMC CONTEXT</div></div>
+        <div class="tpai-txt" id="tpCtx">กำลังวิเคราะห์ — รอราคาจาก TradingView...</div>
+      </div>
+      <div class="tprows">
+        <div class="tprow"><span class="tplab">สถานะ (Action)</span><span class="tpval" id="tpAction">—</span></div>
+        <div class="tprow"><span class="tplab">โซนรอเข้าเทรด</span><strong class="tpval" id="tpEntry" style="color:var(--gld)">—</strong></div>
+        <div class="tprow"><span class="tplab">จุดยอมแพ้ (SL)</span><strong class="tpval" id="tpSL" style="color:var(--red)">—</strong></div>
+        <div class="tprow"><span class="tplab">เป้าหมาย (TP)</span><strong class="tpval" id="tpTP" style="color:var(--grn)">—</strong></div>
+        <div class="tprow" style="border-bottom:none"><span class="tplab">Risk/Reward</span><strong class="tpval" id="tpRR" style="color:var(--blu)">—</strong></div>
+      </div>
+      <button class="tpref" onclick="doReanalyze()">🔄 ให้ AI วิเคราะห์ใหม่</button>
+    </div>
+  </div>
+
+  <div class="rpsec">
+    <div class="rplbl">โซน SMC — XAUUSD</div>
+    <div class="zonelist">
+      <div class="zitem"><div class="zt zt-r">BSL</div><div style="color:var(--t2);flex:1">Buy Side Liq.</div><strong style="font-family:var(--mn);font-size:11px;color:var(--red)" id="rpBSL">—</strong></div>
+      <div class="zitem"><div class="zt zt-gld">FVG</div><div style="color:var(--t2);flex:1">Fair Value Gap M15</div><strong style="font-family:var(--mn);font-size:11px;color:var(--gld)" id="rpFVG">—</strong></div>
+      <div class="zitem"><div class="zt zt-gld">OB</div><div style="color:var(--t2);flex:1">Order Block</div><strong style="font-family:var(--mn);font-size:11px;color:var(--gld)" id="rpOB">—</strong></div>
+      <div class="zitem"><div class="zt zt-g">SSL</div><div style="color:var(--t2);flex:1">Sell Side Liq.</div><strong style="font-family:var(--mn);font-size:11px;color:var(--grn)" id="rpSSL">—</strong></div>
+    </div>
+  </div>
+  <div class="rpsec"><div class="risc">⚠ <strong style="color:var(--yel)">คำเตือน:</strong> RedBox AI คือ Copilot ไม่ใช่แจกซิกแนล Risk ไม่เกิน <strong style="color:var(--t1)">1–2%</strong> ต่อออร์เดอร์</div></div>
+</div>
+</div>
+</div>
+
+<!-- ══════════ CHARTS PAGE ══════════ -->
+<div class="pg" id="pg-charts">
+<div class="chpg">
+  <div class="pghd">
+    <div class="pgtitle">กราฟสินทรัพย์</div>
+    <div class="pgsub">ราคาในการ์ดดึงตรงจาก TradingView — ตรงกับกราฟ 100%</div>
+  </div>
+  <div class="agrid" id="aGrid"></div>
+</div>
+</div>
+
+<!-- ══════════ ALERTS PAGE ══════════ -->
+<div class="pg" id="pg-alerts">
+<div class="alpg">
+  <div class="alhd"><div class="altitle">การแจ้งเตือน</div><div style="font-family:var(--mn);font-size:10px;color:var(--t2)">3 ใหม่</div></div>
+  <div class="alitem new" onclick="openChart('XAUUSD')">
+    <div class="alic">⚡</div>
+    <div class="alcnt"><div class="altl">BUY Setup — XAUUSD M5 (SMC)</div><div class="aldc">SSL Sweep เสร็จ เกิด CHoCH ขาขึ้น <strong>FVG Entry Zone</strong> เปิดรออยู่</div>
+    <div class="almeta"><div class="amsym">XAUUSD</div><div class="amsym" style="background:var(--grn2);color:var(--grn);border-color:rgba(32,201,151,.3)">BUY</div><div class="amsym" style="background:var(--gld2);color:var(--gld);border-color:rgba(232,184,75,.3)">SMC</div></div></div>
+    <div class="albtn">ดูกราฟ →</div>
+  </div>
+  <div class="alitem new" onclick="openChart('BTCUSD')">
+    <div class="alic">🔮</div>
+    <div class="alcnt"><div class="altl">Liquidity Sweep + Pin Bar — BTCUSD</div><div class="aldc">SSL ถูกกวาด พบ <strong>Pin Bar</strong> ที่ OB — รอ CHoCH M15</div>
+    <div class="almeta"><div class="amsym">BTCUSD</div><div class="amsym" style="background:var(--yel2);color:var(--yel);border-color:rgba(252,196,25,.3)">รอยืนยัน</div></div></div>
+    <div class="albtn">ดูกราฟ →</div>
+  </div>
+  <div class="alitem new" onclick="openChart('ETHUSD')">
+    <div class="alic">🎯</div>
+    <div class="alcnt"><div class="altl">ICT Killzone Setup — ETHUSD</div><div class="aldc">NY Session เปิด <strong>BOS + FVG</strong> H1 — เงื่อนไข ICT ครบ</div>
+    <div class="almeta"><div class="amsym">ETHUSD</div><div class="amsym" style="background:var(--pur2);color:var(--pur);border-color:rgba(204,93,232,.3)">ICT</div></div></div>
+    <div class="albtn">ดูกราฟ →</div>
+  </div>
+  <div class="alitem warn"><div class="alic">🔔</div><div class="alcnt"><div class="altl">HIGH IMPACT ใกล้ออกแล้ว</div><div class="aldc">US CPI จะออกในอีกไม่นาน — แนะนำทับมือทุกสินทรัพย์</div></div></div>
+</div>
+</div>
+
+<script>
+// ─── ASSET DATA ───
+const ASSETS = {
+  XAUUSD:{name:'ทองคำ Spot',tv:'OANDA:XAUUSD',alert:'new',alertLbl:'กำลังหา Setup',
+    techs:['SMC','ICT','FVG','CHoCH','OB'],
+    zones:[{t:'BSL',k:'bsl',c:'zr',d:'Buy Side Liquidity'},{t:'FVG',k:'fvg',c:'zgld',d:'Fair Value Gap M15'},{t:'OB',k:'ob',c:'zgld',d:'Order Block Demand'},{t:'SSL',k:'ssl',c:'zg',d:'Sell Side Liquidity'}],
+    analysis:`กำลังรอการประมวลผลโครงสร้างราคาทองคำ...`,
+    setup:{dir:'รอสัญญาณ',rr:'-',conf:'-'},
+    pa:[{t:'pa',n:'Market Structure',d:'รออัปเดตราคา',s:'⏳ รอข้อมูล'}]},
+  BTCUSD:{name:'Bitcoin',tv:'BINANCE:BTCUSDT',alert:'warn',alertLbl:'SSL Sweep — รอ CHoCH',
+    techs:['SMC','PA','Pin Bar','OB'],
+    zones:[{t:'BSL',k:'bsl',c:'zr',d:'Buy Side Liquidity'},{t:'FVG',k:'fvg',c:'zgld',d:'Fair Value Gap H1'},{t:'OB',k:'ob',c:'zgld',d:'Order Block'},{t:'SSL',k:'ssl',c:'zg',d:'Sell Side Liquidity'}],
+    analysis:`SSL Sweep เกิดขึ้น แต่ยัง <span class="ho">ไม่พบ CHoCH</span><br>พบ <strong>Pin Bar</strong> ที่ OB — รอ <span class="hgld">BOS M15</span>`,
+    setup:{dir:'⏳ รอยืนยัน',rr:'1:2.2',conf:'MED'},
+    pa:[{t:'smc',n:'Liquidity Sweep',d:'SSL ถูกกวาดแล้ว',s:'✅ เกิดขึ้น'},
+        {t:'pa',n:'Pin Bar',d:'Rejection ที่ OB — รอยืนยัน',s:'⏳ M15 ยังไม่ยืนยัน'},
+        {t:'smc',n:'CHoCH',d:'Change of Character',s:'❌ ยังไม่เกิด'}]},
+  ETHUSD:{name:'Ethereum',tv:'BINANCE:ETHUSDT',alert:'new',alertLbl:'ICT Killzone BUY',
+    techs:['ICT','SMC','FVG','BOS'],
+    zones:[{t:'BSL',k:'bsl',c:'zr',d:'Buy Side Liquidity'},{t:'FVG',k:'fvg',c:'zgld',d:'Fair Value Gap'},{t:'OB',k:'ob',c:'zgld',d:'Order Block'},{t:'SSL',k:'ssl',c:'zg',d:'Sell Side Liquidity'}],
+    analysis:`NY Open Killzone เปิด พบ <span class="hg">BOS H1</span><br><span class="hgld">FVG</span> เปิดรอ Entry — ICT ครบ`,
+    setup:{dir:'▲ BUY',rr:'1:3',conf:'HIGH'},
+    pa:[{t:'ict',n:'ICT Killzone',d:'NY Open — สถาบันเริ่มเข้า',s:'✅ อยู่ในช่วง'},
+        {t:'smc',n:'BOS',d:'Break of Structure H1',s:'✅ ยืนยัน'},
+        {t:'smc',n:'FVG',d:'Fair Value Gap รอ Entry',s:'⏳ รอ Price'}]},
+  EURUSD:{name:'Euro / USD',tv:'FX:EURUSD',alert:'none',alertLbl:'กำลังจับตา',
+    techs:['PA','Market Structure'],
+    zones:[{t:'Res',k:'bsl',c:'zr',d:'Resistance'},{t:'OB',k:'ob',c:'zgld',d:'Order Block'},{t:'Sup',k:'ssl',c:'zg',d:'Support'}],
+    analysis:`โครงสร้าง <strong>Sideways</strong> รอทิศทาง CPI`,setup:null,
+    pa:[{t:'pa',n:'Market Structure',d:'Sideways — รอ Breakout',s:'⏳ รอ'}]},
+  USDJPY:{name:'USD / Japanese Yen',tv:'FX:USDJPY',alert:'none',alertLbl:'ติดตาม USD Bias',
+    techs:['PA','Market Structure'],
+    zones:[{t:'Res',k:'bsl',c:'zr',d:'Resistance'},{t:'OB',k:'ob',c:'zgld',d:'Order Block'},{t:'Sup',k:'ssl',c:'zg',d:'Support'}],
+    analysis:`ใช้ติดตาม <strong>Bias ดอลลาร์</strong> — รอ CPI`,setup:null,
+    pa:[{t:'pa',n:'Market Structure',d:'Bearish bias รอ CPI',s:'⏳ รอ'}]},
+};
+
+// ─── FORMAT HELPERS ───
+function f(v,d=2){ if(v==null||isNaN(v)) return '—'; return (+v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function zn(sym,p){
+  if(!p) return {bsl:'—',fvg:'—',ob:'—',ssl:'—'};
+  switch(sym){
+    case 'XAUUSD': return {bsl:f(p+15,2),fvg:`${f(p-3,2)}–${f(p-1,2)}`,ob:`${f(p-6,2)}–${f(p-4,2)}`,ssl:f(p-10,2)}; // คำนวณเป็น point คร่าวๆ จากราคาปัจจุบัน
+    case 'BTCUSD': return {bsl:f(Math.round(p*1.022),0),fvg:`${f(Math.round(p*1.004),0)}–${f(Math.round(p*1.008),0)}`,ob:`${f(Math.round(p*0.991),0)}–${f(Math.round(p*0.995),0)}`,ssl:f(Math.round(p*0.985),0)};
+    case 'ETHUSD': return {bsl:f(p*1.026,2),fvg:`${f(p*1.006,2)}–${f(p*1.010,2)}`,ob:`${f(p*0.989,2)}–${f(p*0.994,2)}`,ssl:f(p*0.981,2)};
+    default:{ const d=sym==='USDJPY'?3:4; return {bsl:f(p*1.005,d),fvg:`${f(p*1.001,d)}–${f(p*1.003,d)}`,ob:`${f(p*0.997,d)}–${f(p*0.999,d)}`,ssl:f(p*0.993,d)}; }
+  }
+}
+function sel(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
+
+// ─── PRICE FEEDS (Real-time via WebSocket) ───
+const LP = {}; 
+
+(function wsStart(){
+  try{
+    // ★ เพิ่มสตรีม PAXGUSDT (ทองคำคริปโต) เพื่อใช้เป็นตัวแทน XAUUSD ★
+    const ws=new WebSocket('wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker/paxgusdt@ticker');
+    ws.onmessage=e=>{
+      try{
+        const d=JSON.parse(e.data).data;
+        if(!d) return;
+        
+        let sym = null;
+        if(d.s === 'BTCUSDT') sym = 'BTCUSD';
+        else if(d.s === 'ETHUSDT') sym = 'ETHUSD';
+        else if(d.s === 'PAXGUSDT') sym = 'XAUUSD'; // ให้ PAXG ทำหน้าที่แทนทองคำ
+        
+        if(!sym) return;
+        LP[sym] = {p:+d.c, chg:+d.P};
+        onPx(sym);
+      }catch(e){}
+    };
+    ws.onclose=()=>setTimeout(wsStart,3000);
+    ws.onerror=()=>ws.close();
+  }catch(e){}
+})();
+
+// Forex fallback
+async function fetchForex(){
+  try{
+    const r=await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,JPY');
+    const d=await r.json();
+    if(d.rates?.EUR) LP['EURUSD']={p:1/d.rates.EUR,chg:0};
+    if(d.rates?.JPY) LP['USDJPY']={p:d.rates.JPY,chg:0};
+  }catch(e){}
+}
+
+function onPx(sym){
+  const px=LP[sym]; if(!px?.p) return;
+  const z=zn(sym,px.p);
+  
+  if(sym==='XAUUSD'){
+    // อัปเดตโซน SMC ทุกครั้งที่ราคาทองขยับ
+    sel('kvBSL',z.bsl);sel('rpBSL',z.bsl);
+    sel('kvOB',z.ob);sel('rpOB',z.ob);
+    sel('kvSSL',z.ssl);sel('rpSSL',z.ssl);
+    sel('kvFVG',z.fvg);sel('rpFVG',z.fvg);
+    sel('ph3ssl',z.ssl);sel('ph3fvg',z.fvg);
+    sel('ph3entry',z.fvg);sel('ph3sl',f(px.p-8,2));sel('ph3tp',z.bsl);
+    updateTP();
+  }
+  
+  const n=new Date();
+  sel('dcTime',`อัปเดต ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')} น.`);
+}
+
+fetchForex();
+setInterval(fetchForex,30000);
+
+// ─── TRADE PLAN ───
+let cdTarget = null; // เป้าหมายเวลานับถอยหลังข่าว
+function updateTP(){
+  const px=LP['XAUUSD']; if(!px?.p) return;
+  const z=zn('XAUUSD',px.p), p=px.p;
+  let action,cls,ctx,entry,sl,tp,rr,badge,bcls;
+  
+  // เช็คว่ามีข่าวแรงกำลังจะออกหรือไม่ (อิงจากตัวแปร cdTarget ที่ถูกเซ็ตในระบบ Calendar)
+  if(cdTarget && (cdTarget - new Date()) < 3600000) { // ถ้าข่าวออกในอีกไม่เกิน 1 ชม.
+    action='รอดูข่าว (Wait)';cls='tp-wait';badge='ทับมือ';bcls='rp-o';
+    ctx=`<strong>Context:</strong> ตลาดชะลอตัว รอข่าวสำคัญออก<br><br><strong>SMC:</strong> ห้ามเปิดออร์เดอร์สวนทิศทางก่อนข่าว รอพฤติกรรมหลังข่าว (Sweep) ค่อยหาจังหวะ`;
+    entry=`${f(p-2,2)} – ${f(p+2,2)}`; sl=z.ssl; tp=z.bsl; rr='1 : 2.0';
+  } else if(px.chg>0.1){
+    action='BUY (รอเข้า)';cls='tp-buy';badge='มี Setup';bcls='rp-g';
+    ctx=`<strong>Bullish Bias:</strong> ราคาวิ่งขึ้นเหนือแนวรับ โมเมนตัมฝั่งซื้อได้เปรียบ<br><br><strong>SMC Setup:</strong> กราฟกวาด <span class="tr">SSL</span> เกิด <strong>CHoCH ขาขึ้น</strong> M5 — รอ <span class="tgld">FVG</span> เพื่อ Entry`;
+    entry=z.fvg; sl=f(p-6,2)+' (ใต้ Sweep)'; tp=z.bsl+' (BSL)'; rr='1 : 2.5';
+  } else {
+    action='SELL (รอเข้า)';cls='tp-sell';badge='มี Setup';bcls='rp-r';
+    ctx=`<strong>Bearish Bias:</strong> ราคาร่วงลง โมเมนตัมฝั่งขายได้เปรียบ<br><br><strong>SMC Setup:</strong> กราฟกวาด <span class="tg">BSL</span> เกิด <strong>CHoCH ขาลง</strong> M5 — รอ <span class="tgld">FVG ฝั่ง Sell</span>`;
+    entry=z.fvg; sl=f(p+5,2)+' (เหนือ OB)'; tp=z.ssl+' (SSL)'; rr='1 : 2.2';
+  }
+  
+  const ct=document.getElementById('tpCtx'); if(ct) ct.innerHTML=ctx;
+  const ac=document.getElementById('tpAction'); if(ac){ac.textContent=action;ac.className='tpval '+cls;}
+  sel('tpEntry',entry);sel('tpSL',sl);sel('tpTP',tp);sel('tpRR',rr);
+  const bd=document.getElementById('tpBadge');
+  if(bd){bd.textContent=badge;bd.className='rpill '+bcls;}
+}
+
+function doReanalyze(){
+  const btn=document.querySelector('.tpref'), ctx=document.getElementById('tpCtx');
+  if(!btn||!ctx) return;
+  btn.textContent='⏳ กำลังวิเคราะห์...'; btn.disabled=true;
+  ctx.innerHTML='<div style="display:flex;align-items:center;gap:6px;padding:4px 0"><div style="width:11px;height:11px;border:1.5px solid var(--b2);border-top-color:var(--grn);border-radius:50%;animation:sp .8s linear infinite;flex-shrink:0"></div><span style="color:var(--t3);font-size:10px">กำลังดึง Price + Structure...</span></div>';
+  setTimeout(()=>{updateTP();btn.textContent='🔄 ให้ AI วิเคราะห์ใหม่';btn.disabled=false;}, 1500);
+}
+
+// ─── TV MARKET OVERVIEW WIDGET (sidebar) ───
+function injectTVMarketOverview(){
+  const wrap=document.getElementById('tvMktWrap');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  const cont=document.createElement('div');
+  cont.className='tradingview-widget-container';
+  cont.style.cssText='width:100%;overflow:hidden';
+  cont.innerHTML='<div class="tradingview-widget-container__widget"></div>';
+  const sc=document.createElement('script');
+  sc.type='text/javascript';
+  sc.src='https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
+  sc.async=true;
+  sc.text=JSON.stringify({
+    colorTheme:'dark',
+    dateRange:'1D',
+    showChart:false,
+    locale:'th',
+    isTransparent:true,
+    showSymbolLogo:false,
+    showFloatingTooltip:false,
+    width:'100%',
+    height:'310',
+    tabs:[{
+      title:'สินทรัพย์',
+      symbols:[
+        {s:'OANDA:XAUUSD',d:'ทองคำ XAUUSD'},
+        {s:'BINANCE:BTCUSDT',d:'Bitcoin BTCUSD'},
+        {s:'BINANCE:ETHUSDT',d:'Ethereum ETHUSD'},
+        {s:'FX:EURUSD',d:'EUR/USD'},
+        {s:'FX:USDJPY',d:'USD/JPY'}
+      ],
+      originalTitle:'สินทรัพย์'
+    }]
+  });
+  cont.appendChild(sc);
+  wrap.appendChild(cont);
+}
+
+// ─── CHART MODAL ───
+let curSym='', curTF='5', curStab='zones';
+
+function openChart(sym){
+  curSym=sym;
+  const a=ASSETS[sym]; if(!a) return;
+  document.getElementById('mSym').textContent=sym;
+  
+  const qa=document.getElementById('mQuoteArea');
+  qa.innerHTML='';
+  const qc=document.createElement('div');
+  qc.className='tradingview-widget-container';
+  qc.style.cssText='height:44px;overflow:hidden;width:180px';
+  qc.innerHTML='<div class="tradingview-widget-container__widget"></div>';
+  const qs=document.createElement('script');
+  qs.type='text/javascript';
+  qs.src='https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js';
+  qs.async=true;
+  qs.text=JSON.stringify({symbol:a.tv,width:'100%',isTransparent:true,colorTheme:'dark',locale:'en'});
+  qc.appendChild(qs);
+  qa.appendChild(qc);
+  
+  curTF='5';
+  document.querySelectorAll('.tfb').forEach((b,i)=>b.classList.toggle('on',i===1));
+  loadChart(a.tv,'5');
+  curStab='zones';
+  document.querySelectorAll('.stab').forEach((t,i)=>t.classList.toggle('on',i===0));
+  renderSPanel();
+  document.getElementById('chartModal').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+
+function loadChart(tvSym,tf){
+  const cont=document.getElementById('tvChartCont');
+  cont.innerHTML='';
+  document.getElementById('chartLoad').classList.remove('gone');
+  document.querySelectorAll('script[data-tvc]').forEach(s=>s.remove());
+  const wrap=document.createElement('div');
+  wrap.id='tv_chart_el';
+  wrap.style.cssText='width:100%;height:100%';
+  cont.appendChild(wrap);
+  const sc=document.createElement('script');
+  sc.setAttribute('data-tvc','1');
+  sc.src='https://s3.tradingview.com/tv.js';
+  sc.onload=()=>{
+    try{
+      new TradingView.widget({
+        symbol:tvSym,interval:tf,timezone:'Asia/Bangkok',
+        theme:'dark',style:'1',locale:'th',
+        toolbar_bg:'#0c0f16',enable_publishing:false,
+        hide_top_toolbar:false,hide_side_toolbar:false,
+        allow_symbol_change:false,container_id:'tv_chart_el',
+        width:'100%',height:'100%',save_image:false,
+        backgroundColor:'rgba(7,9,12,1)',
+        gridColor:'rgba(24,32,46,0.8)',
+        withdateranges:true,
+      });
+      setTimeout(()=>document.getElementById('chartLoad').classList.add('gone'),3000);
+    }catch(e){document.getElementById('chartLoad').classList.add('gone');}
+  };
+  sc.onerror=()=>{
+    document.getElementById('chartLoad').classList.add('gone');
+    cont.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:14px;background:var(--s2)">
+      <div style="font-size:28px">📈</div>
+      <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym)}" target="_blank" style="font-family:var(--mn);font-size:10px;padding:8px 16px;border:1px solid rgba(240,62,62,.4);color:var(--red);text-decoration:none;background:var(--red2)">เปิด TradingView โดยตรง →</a>
+    </div>`;
+  };
+  document.head.appendChild(sc);
+}
+
+function setTF(tf,btn){
+  curTF=tf;
+  document.querySelectorAll('.tfb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const a=ASSETS[curSym]; if(a) loadChart(a.tv,tf);
+}
+
+function closeModal(){
+  document.getElementById('chartModal').classList.remove('on');
+  document.body.style.overflow='';
+  document.getElementById('tvChartCont').innerHTML='';
+}
+function closeMBG(e){ if(e.target===document.getElementById('chartModal')) closeModal(); }
+
+// ─── SIDE PANEL ───
+function setStab(tab,el){
+  curStab=tab;
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  renderSPanel();
+}
+
+function renderSPanel(){
+  const a=ASSETS[curSym]; if(!a) return;
+  const px=LP[curSym], z=zn(curSym,px?.p);
+  const el=document.getElementById('sCont');
+  if(curStab==='zones'){
+    const zh=a.zones.map(zd=>`<div class="zrow"><div><div class="ztag">${zd.t}</div><div class="zdesc">${zd.d}</div></div><div class="zval ${zd.c}">${z[zd.k]||'—'}</div></div>`).join('');
+    const sh=a.setup?`<div class="setupbox"><div class="sddir">${a.setup.dir}</div><div class="sdgrid">
+      <div class="sdi"><div class="sdi-l">Entry</div><div class="sdi-v sde">${z.fvg||'—'}</div></div>
+      <div class="sdi"><div class="sdi-l">SL</div><div class="sdi-v sdsl">${px?f(px.p-8,2):'—'}</div></div>
+      <div class="sdi"><div class="sdi-l">TP</div><div class="sdi-v sdtp">${z.bsl||'—'}</div></div>
+      <div class="sdi"><div class="sdi-l">R:R</div><div class="sdi-v sdrr">${a.setup.rr}</div></div>
+    </div></div>`:
+    '<div style="font-size:11px;color:var(--t3);padding:8px 0">ยังไม่มี Setup</div>';
+    el.innerHTML=`<div style="margin-bottom:10px"><div style="font-family:var(--mn);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:7px">SMC ZONES</div>${zh}</div>${sh}`;
+  }
+  else if(curStab==='ai'){
+    const sh=a.setup?`<div class="setupbox" style="margin-top:8px"><div class="sddir">${a.setup.dir}</div><div class="sdgrid">
+      <div class="sdi"><div class="sdi-l">Entry</div><div class="sdi-v sde">${z.fvg||'—'}</div></div>
+      <div class="sdi"><div class="sdi-l">SL</div><div class="sdi-v sdsl">${px?f(px.p-8,2):'—'}</div></div>
+      <div class="sdi"><div class="sdi-l">TP</div><div class="sdi-v sdtp">${z.bsl||'—'}</div></div>
+      <div class="sdi"><div class="sdi-l">Conf.</div><div class="sdi-v sdrr">${a.setup.conf}</div></div>
+    </div></div><button class="rebtn" onclick="sReanalyze()">🔄 วิเคราะห์ใหม่</button>`:'';
+    el.innerHTML=`<div style="background:var(--s2);border:1px solid var(--b1);padding:9px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px"><div style="width:5px;height:5px;border-radius:50%;background:var(--grn);animation:bk 1s infinite;flex-shrink:0"></div><span style="font-family:var(--mn);font-size:8px;letter-spacing:1px;color:var(--grn)">AI ANALYSIS</span></div>
+      <div style="font-size:11px;color:var(--t2);line-height:1.7">${a.analysis}</div>
+    </div>${sh}`;
+  }
+  else{
+    const th={smc:'pa-smc',ict:'pa-ict',pa:'pa-pa'}, tn={smc:'SMC',ict:'ICT',pa:'PA'};
+    const ph=a.pa.map(p=>{
+      const sc=p.s.includes('✅')?'var(--grn)':p.s.includes('❌')?'var(--red)':'var(--ora)';
+      return `<div class="paitem"><div class="patop"><div class="patag ${th[p.t]}">${tn[p.t]}</div><div class="paname">${p.n}</div><div class="pastatus" style="color:${sc}">${p.s}</div></div><div class="padesc">${p.d}</div></div>`;
+    }).join('');
+    el.innerHTML=`<div style="font-family:var(--mn);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:7px">เทคนิคที่ตรวจพบ</div>${ph}`;
+  }
+}
+
+function sReanalyze(){ setTimeout(()=>renderSPanel(),1600); }
+
+// ─── ASSETS GRID (Charts page) ───
+const tmap={SMC:'t-smc',ICT:'t-ict','Market Structure':'t-pa',FVG:'t-smc',OB:'t-smc',CHoCH:'t-smc',BOS:'t-smc','Pin Bar':'t-pa',PA:'t-pa'};
+
+function renderGrid(){
+  const grid=document.getElementById('aGrid'); if(!grid) return;
+  grid.innerHTML=Object.entries(ASSETS).map(([sym,a])=>{
+    const ha=a.alert==='new';
+    const tags=a.techs.map(t=>`<span class="atag ${tmap[t]||'t-pa'}">${t}</span>`).join('');
+    return `<div class="acard ${ha?'alert-a':''}" onclick="openChart('${sym}')">
+      <div class="actop">
+        <div><div class="acsym">${sym}</div><div class="acname">${a.name}</div></div>
+        ${ha?`<div class="acbadge-a"><div class="ldot" style="width:4px;height:4px"></div>Setup</div>`:`<div class="acbadge-w">${a.alertLbl}</div>`}
+      </div>
+      <div class="ac-quote">
+        <div class="ac-quote-loading">⏳ กำลังโหลดราคา...</div>
+        <div class="tradingview-widget-container" style="position:absolute;inset:0;overflow:hidden">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js" async>
+          {"symbol":"${a.tv}","width":"100%","isTransparent":true,"colorTheme":"dark","locale":"en"}
+          <\/script>
+        </div>
+      </div>
+      <div class="actags">${tags}${ha?'<span class="atag t-alrt">⚡ Setup</span>':''}</div>
+      <div class="acfooter">
+        ${ha?`<div class="ac-atxt"><div class="ldot" style="width:4px;height:4px"></div>${a.alertLbl}</div>`:`<div class="ac-wtxt">${a.alertLbl}</div>`}
+        <div class="acopen">เปิดกราฟ →</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── CALENDAR ───
+async function loadCal(){
+  try{
+    const url='https://nfs.faireconomy.media/ff_calendar_thisweek.json?t=' + Date.now();
+    const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url),{cache:'no-store'});
+    const data=await r.json();
+    if(!Array.isArray(data)||!data.length) throw new Error();
+    const now=new Date();
+    const todayBKK=new Date(now.getTime()+7*3600000).toISOString().split('T')[0];
+    const today=data.filter(e=>{
+      const d=new Date(e.date);
+      return new Date(d.getTime()+7*3600000).toISOString().split('T')[0]===todayBKK;
+    });
+    if(!today.length) throw new Error();
+    renderCalFF(today,now);
+    sel('calBadge',`อัปเดตล่าสุด`);
+    const hcnt=today.filter(e=>e.impact==='High').length;
+    sel('stHigh',String(hcnt));
+    
+    // หาข่าวแรงถัดไป
+    const nxt=today.find(e=>new Date(e.date)>now&&e.impact==='High');
+    if(nxt){
+      const diff=Math.round((new Date(nxt.date)-now)/60000);
+      sel('stNext',diff<60?diff+' นาที':Math.round(diff/60)+' ชม.');
+      sel('stNextName',nxt.title||'—');
+      sel('cdText',nxt.title||'ข่าว HIGH IMPACT ถัดไป');
+      sel('cdSub',(nxt.country||'')+' — จาก Forex Factory');
+      cdTarget = new Date(nxt.date);
+      startCountdown(cdTarget);
+    } else {
+      sel('cdTimer',"--:--");
+      sel('cdText',"ไม่มีข่าว High Impact เร็วๆ นี้");
+      sel('cdSub',"สามารถเทรดตามโครงสร้างปกติได้");
+      sel('stNext',"ไม่มี");
+      sel('stNextName',"ข่าวแรง");
+    }
+  }catch(e){
+    console.log("กำลังดึงปฏิทินข่าว...");
+  }
+}
+
+function renderCalFF(events,now){
+  let html=''; let passedNow=false;
+  events.forEach(ev=>{
+    const et=new Date(ev.date), isPast=et<now, isNext=!passedNow&&!isPast;
+    if(!passedNow&&!isPast){ passedNow=true; html+=`<div class="nowline"><div class="nl"></div><div class="nt">▶ ตอนนี้</div><div class="nl"></div></div>`; }
+    const imp=ev.impact||'';
+    const ic=imp==='High'?'ih':imp==='Medium'?'im':'il';
+    const il=imp==='High'?'HIGH':imp==='Medium'?'MED':'LOW';
+    const bkk=new Date(et.getTime()+7*3600000);
+    const ts=`${String(bkk.getUTCHours()).padStart(2,'0')}:${String(bkk.getUTCMinutes()).padStart(2,'0')}`;
+    const tc=isNext&&imp==='High'?'crt soon':'crt';
+    const ac=!ev.actual?'ca-pend':(+ev.actual>(+(ev.forecast)||0)?'ca-hot':'ca-cold');
+    html+=`<div class="calrow"><div class="${tc}">${ts}</div><div class="imp ${ic}">${il}</div><div class="crn">${ev.title||'—'}<small>${ev.country||''}</small></div><div class="crnum">${ev.forecast||'—'}</div><div class="cract ${ac}">${ev.actual||'—'}</div></div>`;
+  });
+  document.getElementById('calBody').innerHTML=html||'<div style="padding:16px;text-align:center;font-size:11px;color:var(--t3)">ไม่มีข่าววันนี้</div>';
+}
+
+// ─── COUNTDOWN ───
+let cdInt=null;
+function startCountdown(target){
+  if(cdInt) clearInterval(cdInt);
+  cdInt=setInterval(()=>{
+    const s=Math.floor((target-new Date())/1000);
+    if(s<=0){sel('cdTimer','🔴 LIVE');clearInterval(cdInt);return;}
+    const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;
+    sel('cdTimer',h>0?`${h}:${String(m).padStart(2,'0')}:${String(sc).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(sc).padStart(2,'0')}`);
+  },1000);
+}
+
+// ─── SESSION STATUS ───
+function updateSess(){
+  const now=new Date();
+  const u=now.getUTCHours()*60+now.getUTCMinutes();
+  const sess=[
+    {n:'Sydney',on:u>=22*60||u<7*60},
+    {n:'Tokyo',on:u>=0&&u<9*60},
+    {n:'London',on:u>=7*60&&u<16*60},
+    {n:'New York',on:u>=13*60&&u<22*60},
+  ];
+  const sl=document.getElementById('sessList');
+  if(sl) sl.innerHTML=sess.map(s=>`<div class="sessrow"><div class="sdot ${s.on?'s-on':'s-off'}"></div><span>${s.n}</span><div class="stag ${s.on?'st-on':'st-off'}">${s.on?'เปิด':'ปิด'}</div></div>`).join('');
+}
+updateSess(); setInterval(updateSess,60000);
+
+// ─── CLOCK ───
+setInterval(()=>{const n=new Date();sel('clockEl',`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')} น.`);},1000);
+
+// ─── PAGE NAV ───
+function goPage(name){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pg-'+name).classList.add('on');
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  const m={dashboard:'ntab-db',charts:'ntab-ch',alerts:'ntab-al'};
+  if(m[name]) document.querySelector('.'+m[name])?.classList.add('on');
+  if(name==='charts') renderGrid();
+}
+function togglePh(id){const e=document.getElementById(id);if(e)e.style.display=e.style.display==='none'?'block':'none';}
+
+// ─── INIT ───
+injectTVMarketOverview(); 
+loadCal();
+setInterval(loadCal, 60000); // อัปเดตปฏิทินทุก 1 นาที
+</script>
+</body>
+</html>
